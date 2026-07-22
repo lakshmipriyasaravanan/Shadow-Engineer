@@ -3,6 +3,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
 from ai_service.scanner import analyze_repository
+from ai_service.worker import job_queue, index_repository_task
+from ai_service.retriever import RetrieverService
+from ai_service.llm_gateway import LLMGateway
+from fastapi.responses import StreamingResponse
 import os
 
 logger = structlog.get_logger()
@@ -19,6 +23,15 @@ class HealthResponse(BaseModel):
 
 class AnalysisRequest(BaseModel):
     repository_id: str
+
+class SearchRequest(BaseModel):
+    repository_id: str
+    query: str
+    limit: int = 5
+
+class ChatRequest(BaseModel):
+    repository_id: str
+    query: str
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -40,6 +53,43 @@ async def analyze_repo(request: AnalysisRequest):
         return metrics
     except Exception as e:
         logger.error("Analysis failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/index")
+async def trigger_indexing(request: AnalysisRequest):
+    repo_path = f"/tmp/shadow-engineer/repos/{request.repository_id}"
+    if not os.path.exists(repo_path):
+        raise HTTPException(status_code=404, detail="Repository path not found on disk")
+        
+    job = job_queue.enqueue(index_repository_task, repo_path, request.repository_id)
+    return {"job_id": job.id, "status": "queued"}
+
+@app.post("/api/v1/search")
+async def semantic_search(request: SearchRequest):
+    try:
+        retriever = RetrieverService()
+        results = retriever.search(request.query, request.repository_id, request.limit)
+        return {"results": results}
+    except Exception as e:
+        logger.error("Search failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/chat")
+async def chat_with_repo(request: ChatRequest):
+    try:
+        retriever = RetrieverService()
+        llm = LLMGateway()
+        
+        # Retrieve context
+        context_chunks = retriever.search(request.query, request.repository_id, limit=5)
+        
+        # Stream response
+        return StreamingResponse(
+            llm.generate_response_stream(request.query, context_chunks),
+            media_type="text/event-stream"
+        )
+    except Exception as e:
+        logger.error("Chat failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
