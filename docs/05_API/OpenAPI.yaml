@@ -1,0 +1,98 @@
+openapi: 3.1.0
+info:
+  title: Shadow Engineer API
+  description: The core API for the Shadow Engineer AI software engineering platform.
+  version: 1.0.0
+servers:
+  - url: https://api.shadowengineer.com/api/v1
+    description: Production Server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlation_id:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/github:
+    post:
+      summary: Authenticate via GitHub
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '401':
+          description: Invalid code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/me:
+    get:
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user profile
+        '401':
+          description: Unauthorized
+
+  /ai/chat:
+    post:
+      summary: Start an AI Codebase Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repository_id:
+                  type: string
+                  format: uuid
+                prompt:
+                  type: string
+      responses:
+        '200':
+          description: Streaming markdown response
+          content:
+            text/event-stream:
+              schema:
+                type: string
