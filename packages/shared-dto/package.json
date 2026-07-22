@@ -1,0 +1,13 @@
+{
+  "name": "@shadow-engineer/shared-dto",
+  "version": "1.0.0",
+  "description": "Shared Data Transfer Objects",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+WORKDIR /app
+
+# Install poetry
+RUN pip install poetry==1.8.2
+
+# Copy dependencies
+COPY apps/ai-service/pyproject.toml apps/ai-service/poetry.lock* ./
+RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
+
+# Copy app code
+COPY apps/ai-service/ai_service ./ai_service
+
+EXPOSE 8000
+CMD ["uvicorn", "ai_service.main:app", "--host", "0.0.0.0", "--port", "8000"]

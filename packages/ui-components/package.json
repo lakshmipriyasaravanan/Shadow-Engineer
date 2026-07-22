@@ -1,0 +1,16 @@
+{
+  "name": "@shadow-engineer/ui-components",
+  "version": "1.0.0",
+  "description": "Shared React Components",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

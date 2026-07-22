@@ -1,0 +1,35 @@
+name: CI AI Service
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    paths:
+      - 'apps/ai-service/**'
+      - '.github/workflows/ci-ai.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/ai-service
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.2
+        
+    - name: Install dependencies
+      run: poetry install
+      
+    # - name: Run tests (Commented out until tests are added)
+    #   run: poetry run pytest
