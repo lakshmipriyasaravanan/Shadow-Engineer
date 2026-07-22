@@ -41,3 +41,28 @@ Focus on:
 <CODE>
 {code}
 </CODE>"""
+
+    @staticmethod
+    def build_pr_review_prompt(diff: str) -> str:
+        return f"""You are an elite Senior Staff Engineer performing a Pull Request Code Review.
+Analyze the following git diff and detect bugs, security vulnerabilities (OWASP Top 10), performance issues, and code smells.
+
+You MUST respond in strictly valid JSON format matching this schema:
+{{
+  "executiveSummary": "string (high level overview of the PR and risks)",
+  "securityScore": int (0-100),
+  "maintainabilityScore": int (0-100),
+  "performanceScore": int (0-100),
+  "comments": [
+    {{
+      "filePath": "string",
+      "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO",
+      "reason": "string (why this is an issue)",
+      "suggestion": "string (actionable fix or code snippet)"
+    }}
+  ]
+}}
+
+<DIFF>
+{diff}
+</DIFF>"""

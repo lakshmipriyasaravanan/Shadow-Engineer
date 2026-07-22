@@ -1,9 +1,9 @@
 import structlog
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, List
 from ai_service.scanner import analyze_repository
-from ai_service.worker import job_queue, index_repository_task
+from ai_service.worker import job_queue, index_repository_task, analyze_pr_task
 from ai_service.retriever import RetrieverService
 from ai_service.llm_gateway import LLMGateway
 from fastapi.responses import StreamingResponse
@@ -28,6 +28,11 @@ class SearchRequest(BaseModel):
     repository_id: str
     query: str
     limit: int = 5
+
+class PRReviewRequest(BaseModel):
+    repository_id: str
+    pull_request_id: str
+    github_pr_id: int
 
 class Message(BaseModel):
     role: str
@@ -67,6 +72,11 @@ async def trigger_indexing(request: AnalysisRequest):
         raise HTTPException(status_code=404, detail="Repository path not found on disk")
         
     job = job_queue.enqueue(index_repository_task, repo_path, request.repository_id)
+    return {"job_id": job.id, "status": "queued"}
+
+@app.post("/api/v1/review/trigger")
+async def trigger_pr_review(request: PRReviewRequest):
+    job = job_queue.enqueue(analyze_pr_task, request.repository_id, request.pull_request_id, request.github_pr_id)
     return {"job_id": job.id, "status": "queued"}
 
 @app.post("/api/v1/search")

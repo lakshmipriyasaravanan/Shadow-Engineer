@@ -74,3 +74,47 @@ def index_repository_task(repo_path: str, repository_id: str, branch: str = "mai
     except Exception as e:
         logger.error("Indexing failed", error=str(e), repository_id=repository_id)
         raise e
+
+def analyze_pr_task(repository_id: str, pull_request_id: str, github_pr_id: int):
+    """Background task to analyze a PR diff and generate an AI review."""
+    logger.info("Starting PR Review Analysis", pr_id=pull_request_id)
+    import json
+    from ai_service.prompts import PromptTemplates
+    
+    try:
+        # 1. Fetch Diff from GitHub (Mocking for now to avoid token complexites in background)
+        diff = "diff --git a/src/main/java/com/shadowengineer/core/service/AuthService.java b/src/main/java/com/shadowengineer/core/service/AuthService.java\n+ String query = \"SELECT * FROM users WHERE email = '\" + email + \"'\";"
+        
+        # 2. Build Prompt
+        prompt = PromptTemplates.build_pr_review_prompt(diff)
+        
+        # 3. In a real scenario, we'd call the LLM Gateway here.
+        # For the prototype, we simulate the structured JSON response
+        mock_ai_response = {
+            "executiveSummary": "This PR introduces a critical SQL injection vulnerability in AuthService.",
+            "securityScore": 20,
+            "maintainabilityScore": 85,
+            "performanceScore": 90,
+            "comments": [
+                {
+                    "filePath": "src/main/java/com/shadowengineer/core/service/AuthService.java",
+                    "severity": "CRITICAL",
+                    "reason": "Direct string concatenation in SQL queries leads to SQL Injection (OWASP Top 1).",
+                    "suggestion": "Use PreparedStatements or JPA parameter binding instead."
+                }
+            ]
+        }
+        
+        # 4. Notify Spring Boot backend that the review is complete
+        import requests
+        requests.post(
+            f"http://localhost:8080/api/v1/repositories/{repository_id}/prs/{pull_request_id}/review/complete",
+            json=mock_ai_response
+        )
+        
+        logger.info("PR Review completed successfully", pr_id=pull_request_id)
+        return {"status": "success", "pr_id": pull_request_id}
+        
+    except Exception as e:
+        logger.error("PR Review failed", error=str(e), pr_id=pull_request_id)
+        raise e
