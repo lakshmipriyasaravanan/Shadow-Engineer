@@ -1,6 +1,9 @@
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Dict, Any
+from ai_service.scanner import analyze_repository
+import os
 
 logger = structlog.get_logger()
 
@@ -14,10 +17,30 @@ class HealthResponse(BaseModel):
     status: str
     version: str
 
+class AnalysisRequest(BaseModel):
+    repository_id: str
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     logger.info("Health check requested")
     return HealthResponse(status="ok", version="1.0.0")
+
+@app.post("/api/v1/analyze")
+async def analyze_repo(request: AnalysisRequest):
+    repo_path = f"/tmp/shadow-engineer/repos/{request.repository_id}"
+    
+    if not os.path.exists(repo_path):
+        raise HTTPException(status_code=404, detail="Repository path not found on disk")
+        
+    logger.info("Starting static analysis", repo_id=request.repository_id)
+    
+    try:
+        metrics = analyze_repository(repo_path)
+        logger.info("Analysis complete", metrics=metrics)
+        return metrics
+    except Exception as e:
+        logger.error("Analysis failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
