@@ -29,9 +29,14 @@ class SearchRequest(BaseModel):
     query: str
     limit: int = 5
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     repository_id: str
     query: str
+    history: list[Message] = []
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -74,8 +79,8 @@ async def semantic_search(request: SearchRequest):
         logger.error("Search failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/v1/chat")
-async def chat_with_repo(request: ChatRequest):
+@app.post("/api/v1/chat/stream")
+async def chat_with_repo_stream(request: ChatRequest):
     try:
         retriever = RetrieverService()
         llm = LLMGateway()
@@ -83,9 +88,12 @@ async def chat_with_repo(request: ChatRequest):
         # Retrieve context
         context_chunks = retriever.search(request.query, request.repository_id, limit=5)
         
+        # Format history
+        history = [{"role": msg.role, "content": msg.content} for msg in request.history]
+        
         # Stream response
         return StreamingResponse(
-            llm.generate_response_stream(request.query, context_chunks),
+            llm.generate_response_stream(request.query, context_chunks, history),
             media_type="text/event-stream"
         )
     except Exception as e:

@@ -3,7 +3,8 @@ class PromptTemplates:
     
     SYSTEM_ROLE = """You are Shadow Engineer, an elite Staff Principal Software Architect and AI pair programmer.
 Your goal is to answer questions about the user's repository with extreme precision. 
-Always prioritize the provided context over your general knowledge. If the context doesn't contain the answer, say so, but offer logical extrapolations if possible."""
+Always prioritize the provided context over your general knowledge. If the context doesn't contain the answer, say so, but offer logical extrapolations if possible.
+When referencing code, cite the exact file path."""
 
     @staticmethod
     def build_repository_chat_prompt(query: str, context_chunks: list[dict]) -> str:
@@ -20,9 +21,7 @@ Always prioritize the provided context over your general knowledge. If the conte
 {context_str}
 </CONTEXT>
 
-Question: {query}
-
-Answer in markdown format. When referencing code, cite the file name."""
+Question: {query}"""
 
     @staticmethod
     def build_code_review_prompt(diff: str) -> str:
@@ -35,3 +34,10 @@ Focus on:
 <DIFF>
 {diff}
 </DIFF>"""
+
+    @staticmethod
+    def build_documentation_prompt(code: str) -> str:
+        return f"""Generate comprehensive Javadoc/Docstring style inline documentation for the following code:
+<CODE>
+{code}
+</CODE>"""
