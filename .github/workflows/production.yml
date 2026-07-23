@@ -1,0 +1,78 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: shadow-engineer
+  EKS_CLUSTER: shadow-engineer-eks-production
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Core Service
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/core-service:${{ github.sha }} apps/core-service
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/core-service:${{ github.sha }}
+
+      - name: Build and Push AI Service
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/ai-service:${{ github.sha }} apps/ai-service
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/ai-service:${{ github.sha }}
+
+      - name: Build and Push Web App
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/web:${{ github.sha }} apps/web
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}/web:${{ github.sha }}
+
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update KubeConfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Manifests
+        run: |
+          # Replace ${ECR_REGISTRY} placeholder with actual ECR URI in manifests before applying
+          find infra/k8s/ -type f -exec sed -i "s|\${ECR_REGISTRY}|${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com|g" {} +
+          kubectl apply -f infra/k8s/
+          
+      - name: Verify Deployment Rollout
+        run: |
+          kubectl rollout status deployment/core-service -n shadow-engineer --timeout=5m
+          kubectl rollout status deployment/ai-service -n shadow-engineer --timeout=5m
+          kubectl rollout status deployment/web-app -n shadow-engineer --timeout=5m
