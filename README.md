@@ -1,44 +1,70 @@
-# Shadow Engineer
+<div align="center">
+  <img src="https://img.icons8.com/color/144/000000/artificial-intelligence.png" alt="Shadow Engineer Logo" width="100"/>
+  <h1>Shadow Engineer</h1>
+  <p><strong>The Autonomous AI Pair Programmer for Enterprise Teams</strong></p>
+  
+  [![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/lakshmipriyasaravanan/Shadow-Engineer/releases)
+  [![Build Status](https://img.shields.io/github/actions/workflow/status/lakshmipriyasaravanan/Shadow-Engineer/production.yml?branch=main)](https://github.com/lakshmipriyasaravanan/Shadow-Engineer/actions)
+  [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+  [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?logo=springboot)](https://spring.io/)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+  [![Next.js](https://img.shields.io/badge/Next.js-14-000000?logo=next.js)](https://nextjs.org/)
+</div>
 
-Your AI-powered software engineering teammate that deeply understands a software project and assists developers throughout the software development lifecycle.
+<hr/>
 
-## Overview
+Shadow Engineer is a cloud-native Developer Productivity platform that deeply understands your codebase. It autonomously generates documentation, writes test suites, reviews Pull Requests, and answers complex architectural questions by leveraging advanced Retrieval-Augmented Generation (RAG).
 
-Unlike standard coding assistants, Shadow Engineer understands the entire project, architecture, documentation, pull requests, commit history, APIs, database schema, coding standards, and engineering decisions. It acts like a senior engineer who has worked on the project since day one.
+## 🚀 Key Features
 
-## Monorepo Architecture
+- **Repository Intelligence**: Ingests and semantically indexes your entire Git repository into Qdrant.
+- **AI Pull Request Reviewer**: Autonomously reviews PRs, assigning security and maintainability scores while suggesting actionable code snippets.
+- **Artifact Generator**: Acts as an Elite Technical Writer to generate Onboarding Guides and Mermaid.js Architecture Diagrams.
+- **Developer Copilot Chat**: A specialized ChatGPT-like interface that intimately knows your proprietary codebase.
+- **Enterprise Analytics**: Robust tenant-level insights calculating AI Health Scores and token consumption.
 
-This repository is organized as a Turborepo-style monorepo:
+## 🏗️ Architecture
 
-- **`apps/web`**: Next.js 14 Frontend.
-- **`apps/core-service`**: Spring Boot 3 Core Backend.
-- **`apps/ai-service`**: FastAPI Python service for AST parsing and RAG.
-- **`packages/`**: Shared libraries and utilities.
-- **`docs/`**: Comprehensive project documentation (PRD, Architecture, DB, API, etc.).
-- **`infrastructure/`**: IaC and Kubernetes deployments.
-- **`docker/`**: `docker-compose.yml` and container configurations.
-
-## Quickstart
-
-To run the platform locally, refer to the [Local Development Guide](docs/08_Engineering/Local_Development.md).
-
-```bash
-docker-compose up -d
+```mermaid
+graph TD
+    UI[Next.js Dashboard] -->|REST / JWT| API(Spring Boot Core API)
+    UI -->|Async Tasks| AI(FastAPI AI Engine)
+    API --> DB[(PostgreSQL)]
+    AI --> Vector[(Qdrant Vector DB)]
+    AI --> LLM[OpenAI / Anthropic]
+    AI --> Worker[RQ Background Worker]
+    Worker --> Redis[(Redis Cache)]
 ```
 
-## Documentation
+## 🛠️ Quick Start
 
-- [Product Requirements (PRD)](docs/01_Product/PRD.md)
-- [Software Requirements (SRS)](docs/02_Requirements/SRS.md)
-- [High-Level Design (HLD)](docs/03_Architecture/High_Level_Design.md)
-- [Low-Level Design (LLD)](docs/03_Architecture/Low_Level_Design.md)
-- [Database Design](docs/04_Database/Database_Design.md)
-- [API Specification](docs/05_API/API_Specification.md)
-- [Security Architecture](docs/06_Security/Security_Architecture.md)
-- [AI Architecture](docs/06_AI/AI_Architecture.md)
-- [UI/UX Design Specification](docs/07_UI_UX/UI_UX_Design.md)
-- [Engineering Blueprint](docs/08_Engineering/Monorepo_Architecture.md)
+### 1. Prerequisites
+- Docker & Docker Compose
+- Java 21 (optional, for local dev)
+- Python 3.11 (optional, for local dev)
+- Node.js 20 (optional, for local dev)
 
-## License
+### 2. Environment Setup
+```bash
+cp .env.example .env
+# Edit .env with your OpenAI API Key and GitHub OAuth credentials
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 3. Run the Stack
+We use a centralized `Makefile` for developer orchestration.
+```bash
+make run
+```
+Access the dashboard at [http://localhost:3000](http://localhost:3000).
+
+## 📚 Documentation
+- [Architecture & HLD](docs/04_Architecture/HLD.md)
+- [Deployment & DevOps](docs/09_DevOps/Deployment_Guide.md)
+- [Enterprise Analytics](docs/08_Engineering/Analytics_Guide.md)
+- [Contributing](CONTRIBUTING.md)
+
+## 🛡️ Security
+Please review our [Security Policy](SECURITY.md) before reporting vulnerabilities.
+
+## 📄 License
+This project is licensed under the MIT License.

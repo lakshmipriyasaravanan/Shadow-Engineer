@@ -1,23 +1,18 @@
 # Contributing to Shadow Engineer
 
-First off, thank you for considering contributing to Shadow Engineer!
+First off, thank you for considering contributing to Shadow Engineer! 
 
-## Development Workflow
+## Development Process
 
-1.  **Branching:** We follow GitHub Flow. Create a branch from `main` (e.g., `feat/add-github-oauth`).
-2.  **Commit Messages:** We strictly enforce **Conventional Commits**.
-    *   `feat: add auth`
-    *   `fix: resolve null pointer in ingestion`
-    *   `docs: update API spec`
-3.  **Pull Requests:** 
-    *   Ensure all tests pass.
-    *   Ensure the code passes `ESLint`/`Checkstyle`/`Black`.
-    *   Request review from at least one core maintainer.
+1. **Fork the repository** and clone it locally.
+2. **Copy `.env.example` to `.env`** and configure your keys.
+3. **Run `make run`** to start the local Docker Compose stack.
+4. **Create a branch** (`git checkout -b feature/amazing-feature`).
+5. **Commit your changes** following Conventional Commits (`feat: ...`, `fix: ...`).
+6. **Run tests** via `make test`.
+7. **Push to your fork** and open a Pull Request against the `main` branch.
 
-## Local Setup
-
-Please refer to the Engineering Blueprint in `docs/08_Engineering/Monorepo_Architecture.md` for full setup instructions.
-
-## Code of Conduct
-
-Be kind, constructive, and assume positive intent. Code reviews are for mentorship, not gatekeeping.
+## Architecture Guidelines
+- Ensure any Spring Boot logic adheres to Clean Architecture (Controllers -> Services -> Repositories).
+- Ensure Python AI logic is cleanly separated (FastAPI routes -> LangChain/LLM logic).
+- Never commit secrets or API keys.
