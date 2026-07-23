@@ -118,3 +118,42 @@ def analyze_pr_task(repository_id: str, pull_request_id: str, github_pr_id: int)
     except Exception as e:
         logger.error("PR Review failed", error=str(e), pr_id=pull_request_id)
         raise e
+
+def generate_artifact_task(repository_id: str, artifact_id: str, artifact_type: str, title: str):
+    """Background task to generate documentation, tests, or diagrams."""
+    logger.info("Starting Artifact Generation", artifact_id=artifact_id, type=artifact_type)
+    from ai_service.prompts import PromptTemplates
+    import requests
+    
+    try:
+        # 1. Fetch Repository Context (Mocked for prototype)
+        context = "class AuthService { public void login(String username, String password) { // implementation } }"
+        
+        # 2. Build Prompt & Simulate LLM Call
+        if artifact_type == 'TEST':
+            prompt = PromptTemplates.build_generate_tests_prompt(context, "JUnit 5")
+            mock_content = "```java\n@Test\nvoid testLogin() {\n  authService.login(\"user\", \"pass\");\n}\n```"
+        elif artifact_type == 'DIAGRAM':
+            prompt = PromptTemplates.build_generate_docs_prompt(context, artifact_type)
+            mock_content = "```mermaid\nclassDiagram\n  class AuthService {\n    +login(username, password)\n  }\n```"
+        else:
+            prompt = PromptTemplates.build_generate_docs_prompt(context, artifact_type)
+            mock_content = "# Authentication Service Documentation\nThis service handles user logins."
+        
+        # 3. Notify Spring Boot backend that generation is complete
+        requests.post(
+            f"http://localhost:8080/api/v1/repositories/{repository_id}/artifacts/{artifact_id}/complete",
+            json={"content": mock_content, "status": "COMPLETED"}
+        )
+        
+        logger.info("Artifact generation completed", artifact_id=artifact_id)
+        return {"status": "success", "artifact_id": artifact_id}
+        
+    except Exception as e:
+        logger.error("Artifact generation failed", error=str(e), artifact_id=artifact_id)
+        # Notify failure
+        requests.post(
+            f"http://localhost:8080/api/v1/repositories/{repository_id}/artifacts/{artifact_id}/complete",
+            json={"content": str(e), "status": "FAILED"}
+        )
+        raise e

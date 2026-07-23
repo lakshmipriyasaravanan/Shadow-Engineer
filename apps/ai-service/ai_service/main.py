@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List
 from ai_service.scanner import analyze_repository
-from ai_service.worker import job_queue, index_repository_task, analyze_pr_task
+from ai_service.worker import job_queue, index_repository_task, analyze_pr_task, generate_artifact_task
 from ai_service.retriever import RetrieverService
 from ai_service.llm_gateway import LLMGateway
 from fastapi.responses import StreamingResponse
@@ -43,6 +43,12 @@ class ChatRequest(BaseModel):
     query: str
     history: list[Message] = []
 
+class GenerateArtifactRequest(BaseModel):
+    repository_id: str
+    artifact_id: str
+    type: str
+    title: str
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     logger.info("Health check requested")
@@ -77,6 +83,11 @@ async def trigger_indexing(request: AnalysisRequest):
 @app.post("/api/v1/review/trigger")
 async def trigger_pr_review(request: PRReviewRequest):
     job = job_queue.enqueue(analyze_pr_task, request.repository_id, request.pull_request_id, request.github_pr_id)
+    return {"job_id": job.id, "status": "queued"}
+
+@app.post("/api/v1/generate/artifact")
+async def trigger_generate_artifact(request: GenerateArtifactRequest):
+    job = job_queue.enqueue(generate_artifact_task, request.repository_id, request.artifact_id, request.type, request.title)
     return {"job_id": job.id, "status": "queued"}
 
 @app.post("/api/v1/search")

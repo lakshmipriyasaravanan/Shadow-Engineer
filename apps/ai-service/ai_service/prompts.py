@@ -66,3 +66,29 @@ You MUST respond in strictly valid JSON format matching this schema:
 <DIFF>
 {diff}
 </DIFF>"""
+
+    @staticmethod
+    def build_generate_docs_prompt(context: str, type: str) -> str:
+        if type == 'DIAGRAM':
+            return f"""You are an elite Software Architect. Generate a Mermaid.js diagram based on the following repository context.
+Ensure your response contains ONLY valid Mermaid syntax inside a markdown block (```mermaid ... ```).
+Do not include any other explanations.
+
+<CONTEXT>
+{context}
+</CONTEXT>"""
+        return f"""You are an elite Technical Writer and Software Architect. Generate a comprehensive {type} document based on the following repository context. Use Markdown formatting.
+
+<CONTEXT>
+{context}
+</CONTEXT>"""
+
+    @staticmethod
+    def build_generate_tests_prompt(context: str, framework: str) -> str:
+        return f"""You are an elite Software Engineer. Generate comprehensive unit tests using {framework} for the following code.
+Include edge cases, boundary tests, and mock necessary dependencies.
+Output ONLY the raw code inside a markdown block.
+
+<CODE>
+{context}
+</CODE>"""
